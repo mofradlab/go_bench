@@ -12,6 +12,14 @@ from go_bench.load_tools import load_protein_annotations
 from go_bench.utils import namespaces, experimental_codes
 
 def construct_tsv(path, prot_dict, prot_ids, term_set):
+    """
+    Create a GO Bench tsv file.
+    Parameters:
+    path (String): File path for new file. 
+    prot_dict (Dict[String, List[String]]): Protein annotation dict mapping protein ids to go annotation list
+    prot_ids (List[String]): Ordered list of protein ids, in order that they should appear in tsv file. 
+    term_set (Set[String]): Set of GO terms which should be included in output file. Terms not in term set will be excluded. 
+    """
     print(path, len(prot_dict), len(prot_ids), len(term_set))
     columns = ["Uniprot ID", "GO Associations"]
     with open(path, mode='w') as f:
@@ -27,14 +35,17 @@ def pipeline(goa_path, split_path, save_dir, godag, codes=experimental_codes, na
                 propogate_terms=True, min_date=None, max_date=None,
                 filter_type=('min_samples', 100), filter_testing=False):
     """
-    Inputs:
+    Comprehensive function to parse a GOA file, filter the result by evidence codes, term frequency, namespace, and date,
+    propogate terms through the GO tree, and output GO Bench tsv files. Used in gobench.org to generate outputs. 
+    Parameters:
         goa_path: Path to a GOA formatted tsv file. 
         split_path: Path to a directory containing training_ids.txt, validation_ids.txt, and testing_ids.txt. 
         Each file should contain a newline separated list of UniProt protein identifiers representing those IDs allowed in
         each portion of the train test split. 
         save_dir: Path to the directory where results should be stored. 
         godag: A goatools.obo_parser.GODag object, loaded with prefered version of the gene ontology. Example link in ipynb. 
-        experimental_codes: A set of the ontology evidence quality identifiers which should be allowed into the model. 
+        codes: A set of the ontology evidence quality identifiers which should be allowed into the model. For default example, 
+        see utils.experimental_codes
         namespaces: List of namespaces that should be generated in output dataset. 
         Any set of ("molecular_function", "biological_process", "cellular_component") is valid. 
         set_types: List of set types to be included in output. Any set of ("training", "validation", "testing") is valid. 

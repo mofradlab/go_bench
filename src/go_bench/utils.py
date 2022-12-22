@@ -67,8 +67,6 @@ exp_phy_ht_group = exp_group + high_throughput_codes + phylogenetic_codes
 non_iea_group = exp_phy_ht_group + reviewed_computational_codes
 all_group = evidence_codes
 
-
-
 def list_ancestors(term, godag):
     """Generator yielding all ancestors of a GO term."""
     ancestors = list(godag[term]._parents)

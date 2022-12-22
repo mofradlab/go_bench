@@ -6,9 +6,12 @@ from sklearn.metrics import multilabel_confusion_matrix, precision_recall_fscore
 import math
 from collections import Counter
 
-#Calculates relative information gain of each term found in set of protein annotations.
-#Based on ratio between specificity of most specific parent, and specificity of term. 
+
 def calculate_ic(annots, ontology):
+    """
+    Calculates relative information gain of each term found in set of protein annotations.
+    Based on ratio between specificity of most specific parent, and specificity of term. 
+    """
     cnt = Counter()
     for x in annots.values():
         cnt.update(x)
@@ -37,6 +40,10 @@ def ic_mat(terms, ic_dict):
     return term_ic
 
 def s_metric(testing_matrix, prediction_matrix, test_ia):
+    """
+    Calculate the s-min metric for predictions and labels on a multilabel, 
+    multiclass GO annotation project. 
+    """
     conf_mat = multilabel_confusion_matrix(testing_matrix, prediction_matrix)
     fp = conf_mat[:, 0, 1]
     fn = conf_mat[:, 1, 0]
@@ -45,6 +52,20 @@ def s_metric(testing_matrix, prediction_matrix, test_ia):
     return mi, ru, np.sqrt(mi*mi + ru*ru)
 
 def threshold_stats(testing_matrix, prediction_matrix, test_ia):
+    """
+    Takes in model predictions and true classifications for a multiclass, multilabel GO annotation 
+    problem. Calculates F-score, S-score, and F-est metrics for a range of 100 thresholds between 0 and 1. 
+    Returns the range of values for each. 
+
+    Parameters:
+    testing_matrix (csr_matrix): Sparse binary matrix, in which non-zero values for row i and col j 
+    indicate that the protein for row i should be associated with the GO term for col j. 
+    prediction_matrix (csr_matrix): Sparse floating point matrix with the same format as testing matrix. 
+    Scores should be between 0 and 1, and are interpreted as a probability estimate for protein i being 
+    associated with GO term j. 
+    test_ia (np.array): Vector in which the jth term gives the information content for the jth GO term,
+    as ordered in the prediction and testing matrices. 
+    """
     precs = []
     recs = []
     f_scores = [] 

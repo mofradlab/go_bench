@@ -26,7 +26,29 @@ neg_qualifiers = {'NOT|colocalizes_with', 'NOT|acts_upstream_of_or_within',
                   'NOT|enables', 'NOT|part_of', 'NOT|is_active_in', 'NOT|located_in', 
                   'NOT|contributes_to', 'NOT|involved_in', 'acts_upstream_of_or_within_negative_effect', 
                   'acts_upstream_of_negative_effect'}
+
 def load_protein_annotations(goa_path, annotation_codes, min_date=None, max_date=None):
+    """
+    Loading function which takes in a GOA tab formatted file in which each row contains a protein annotation and
+    outputs a dictionary mapping each protein ID in the file to each annotation for that protein included in the 
+    file (after filtering). 
+  
+    Parameters:
+    goa_path (string): File path leading to a GOA formatted tabular file. 
+    Example at ftp://ftp.ebi.ac.uk/pub/databases/GO/goa/old//UNIPROT/goa_uniprot_all.gaf.203.gz
+
+    annotations_codes (Set[String]): List of annotations codes to count as valid. If the annotation code 
+    for a row in the GOA file isn't included in annotation_codes, the row is ignored. Valid annotation codes,
+    and groups of similar annotation codes, are included as variables in gobench.utils, with the full list being
+    ('ISO', 'IGI', 'ISA', 'IGC', 'IEP', 'RCA', 'HDA', 'HGI', 'IKR', 'TAS', 'HEP', 'ND', 'IBA', 'IMP', 'EXP', 
+    'IDA', 'IC', 'ISM', 'ISS', 'NAS', 'IRD', 'IEA', 'IPI', 'HMP')
+
+    min_date/max_date (Int|None): Minimum and maximum dates for GOA rows included in result. Must be formatted according to 
+    load_tools.to_data_num(year, month, day). 
+  
+    Returns:
+    Dict[String, List[String]]: Dictionary mapping protein ids to a list of gene ontology ids. 
+    """
     annotation_codes = set(annotation_codes)
     annot_dict = defaultdict(set)
     df_iter = pd.read_csv(goa_path, dtype=str,
@@ -55,10 +77,19 @@ def load_protein_annotations(goa_path, annotation_codes, min_date=None, max_date
                 annot_dict[tup[2]].add(tup[5])
     return annot_dict
 
-#loads proteins sequences from a tab or fasta file and filters by a whitelist. Returns sequences and 
-#"prot_row_mappings" giving the entry in sequences that corresponds with each protein id. 
+
 def load_protein_sequences(path, prot_whitelist=None):
-    prot_whitelist = set(prot_whitelist)
+    """
+    Loads proteins sequences from a tab or fasta file and filters by a whitelist set. Returns sequences and 
+    prot_ids representing the protein id associated with each sequence, both in the same order. 
+
+    Parameters:
+    path (string): Path to .fasta or .tab file, either gzipped with an optional .gz extension
+    prot_whitelist (Iterable[String]): An optional set of protein ids to load from the file, for cases where
+    only a known subset of proteins are needed. 
+    """
+    if(prot_whitelist):
+        prot_whitelist = set(prot_whitelist)
 
     sequences = []
     prot_ids = []
@@ -111,6 +142,14 @@ def load_protein_sequences(path, prot_whitelist=None):
 
 #Data management methods and classes
 def load_GO_tsv_file(path):
+    """
+    Loading function for the GOBench specific GO tsv file. Each row from the file must give information
+    for a unique protein, in the format of a protein id followed by a list of comma separated gene ontology ids that
+    the protein has been annotated with. E.g. Protein_ID  GO:00002316,GO:00005547,GO:00008904
+    The output is a dictionary mapping protein ids to lists of associated gene ontology ids, in the same format as that
+    given by load_tools.load_protein_annotations. 
+    
+    """
     prot_dict = {}
     df_iter = pd.read_csv(path, dtype=str,
                           sep='\t',
@@ -125,6 +164,20 @@ def load_GO_tsv_file(path):
 
 #Convert a protein annotation dict to a sparse matrix. 
 def convert_to_sparse_matrix(protein_annotation_dict, term_list, prot_id_list):
+    """
+    A helper function for converting a dictionary mapping proteins to gene ontology annotations
+    to a sparse binary matrix, with a row for each protein and a column for each gene ontology term. 
+    A true value in the matrix at row i and col j indicates that protein i is annotated with GO term j.
+
+    Rows and columns are ordered by their respective orders in prot_id_list and term_list. If a protein or term
+    not included in their list, it will be excluded from the resulting matrix. 
+
+    Parameters:
+    protein_annotation_dict (Dict[String, List[String]]): Protein annotation dictionary
+    term_list (List[String]): An ordered list of gene ontology terms.
+    prot_id_list (List[String]): An ordered list of protein ids. 
+
+    """
     term_col_mappings = {term:i for i, term in enumerate(term_list)}
     prot_row_mappings = {prot:i for i, prot in enumerate(prot_id_list)}
 
@@ -139,6 +192,16 @@ def convert_to_sparse_matrix(protein_annotation_dict, term_list, prot_id_list):
     return labels
 
 def read_sparse(fn, prot_rows, GO_cols):
+    """
+    Reads a CAFA formatted file making GO annotation predictions for a set of proteins. 
+    Each row of the file should have the format ProtID GOID Score. 
+
+    Output is a sparse floating point matrix. A non-zero value s in the matrix at row i and col j 
+    indicates that protein i is annotated with GO term j with score s.
+
+    Rows and columns are ordered by their respective orders in prot_rows and GO_cols. If a protein or term
+    not included in their list, it will be excluded from the resulting matrix. 
+    """
     prm = {prot:i for i, prot in enumerate(prot_rows)}
     tcm = {term:i for i, term in enumerate(GO_cols)}
     sparse_probs = dok_matrix((len(prot_rows), len(GO_cols)))
@@ -149,6 +212,20 @@ def read_sparse(fn, prot_rows, GO_cols):
     return csr_matrix(sparse_probs)
 
 def write_sparse(fn, preds, prot_rows, GO_cols, go, min_certainty):
+    """
+    Convert a sparse matrix of GO annotations to a CAFA formatted tsv file.
+
+    Parameters:
+    fn (String): Path to output file. 
+    preds (csr_matrix): Sparse matrix with non-zero entries at row i, col j indicating an annotation for protein i with
+    GO term j. 
+    prot_rows (List[String]): An ordered list of protein ids. 
+    GO_cols (List[String]): An ordered list of GO terms. 
+    go (GODag): Gene Ontology object from the GODag library. 
+    E.g. from goatools.obo_parser import GODag
+    godag = GODag('data/go.obo')
+    min_certainty (Float): Cutoff at which low scores should be rounded down to zero to increase sparsity. 
+    """
     with open(fn, mode='w') as f:
         f.write("g,t,s\n")
         for row, col in zip(*preds.nonzero()):
