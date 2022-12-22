@@ -4,7 +4,7 @@ go_bench is a python package for generating Gene Ontology datasets from the Swis
 General usage, with download links for required datasets, is shown in gen_datasets.ipynb. To replicate results of [gobench.org](https://www.gobench.org/), it is important to use the same train/validation/test split used the internal server, instead of the script included in this package. These are included in the data_split directory. 
 
 # Install
-go_bench can be installed from git with `pip install git+https://github.com/amdson/go_bench.git`. It requires python >= 3.6, and lists numpy, pandas, scipy, and goatools as dependencies. 
+go_bench can be installed from git with `pip install git+https://github.com/mofradlab/go_bench.git`. It requires python >= 3.6, and lists numpy, pandas, scipy, and goatools as dependencies. 
 
 # Data
 Most go_bench functions parse or manipulate gene ontology data. Raw data can be downloaded from SwissProt, the GOA database, and the Gene Ontology, with links for all requirements included in the go_bench_usage.ipynb notebook. Reproducing the datasets from [gobench.org](https://www.gobench.org/) requires an additional set of train/validation/test splits included in the data_splits directory. 
