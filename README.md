@@ -1,5 +1,5 @@
 # GO Bench
-go_bench is a python package for generating Gene Ontology datasets from the SwissProt and GOA databases. It contains functions for downloading and processing protein annotations to generate training, validation, and testing sets from predetermined random splits. 
+go_bench is a python package for generating and manipulating Gene Ontology datasets from the SwissProt and GOA databases. It contains functions for downloading and processing protein annotations to generate training, validation, and testing sets from predetermined random splits, and functions for parsing and evaluating GO datasets. 
 
 General usage, with download links for required datasets, is shown in gen_datasets.ipynb. To replicate results of [gobench.org](https://www.gobench.org/), it is important to use the same train/validation/test split used the internal server, instead of the script included in this package. These are included in the data_split directory. 
 
