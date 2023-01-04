@@ -19,6 +19,14 @@ We divide the gobench codebase into several sections, focused on loading and man
 Loading function which takes in a GOA tab formatted file in which each row contains a protein annotation and
 outputs a dictionary mapping each protein ID in the file to each annotation for that protein included in the 
 file (after filtering). 
+
+Results are filtered by annotation codes, which need to be included as a function argument. If the annotation code 
+for a row in the GOA file isn't included in annotation_codes, the row is ignored. Valid annotation codes,
+and groups of similar annotation codes, are included as variables in gobench.utils, with the full list being
+('ISO', 'IGI', 'ISA', 'IGC', 'IEP', 'RCA', 'HDA', 'HGI', 'IKR', 'TAS', 'HEP', 'ND', 'IBA', 'IMP', 'EXP', 
+'IDA', 'IC', 'ISM', 'ISS', 'NAS', 'IRD', 'IEA', 'IPI', 'HMP'). The Gene Ontology Consortium provides a [comprehensive 
+explanation](http://geneontology.org/docs/guide-go-evidence-codes/) of each annotation code. 
+
 ### load_protein_sequences
 Loads proteins sequences from a tab or fasta file and filters by a whitelist set. Returns sequences and 
 prot_ids representing the protein id associated with each sequence, both in the same order. 
